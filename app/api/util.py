@@ -24,7 +24,7 @@ def snake_case(string: str) -> str:
 # Check if string is UUID format
 # ------------------------------
 def is_uuid(uuid: str) -> bool:
-    uuid = str(uuid) if isinstance(uuid, UUID) else uuid
+    uuid = uuid
     return re.match(r"^[0-9a-f]{8}-?[0-9a-f]{4}-?4[0-9a-f]{3}-?[89ab][0-9a-f]{3}-?[0-9a-f]{12}$", uuid)
 
 

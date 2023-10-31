@@ -344,10 +344,7 @@ I will answer the user's questions using only the [DOCUMENT] provided. I will ab
 # ----------------------------
 # https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
 def get_token_count(text: str):
-    if not text:
-        return 0
-
-    return OpenAI().get_num_tokens(text=text)
+    return 0 if not text else OpenAI().get_num_tokens(text=text)
 
 
 # --------------------------------------------
@@ -378,7 +375,7 @@ def get_nodes_by_embedding(
     sql = f"""SELECT * FROM {distance_fn}(
     '{embeddings_str}'::vector({VECTOR_EMBEDDINGS_COUNT}),
     {float(distance_threshold)}::double precision,
-    {int(k)});"""
+    {k});"""
 
     # logger.debug(f'🔍 Query: {sql}')
 

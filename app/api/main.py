@@ -132,8 +132,11 @@ def read_organizations():
 
     '''
     with Session(get_engine()) as session:
-        orgs = session.exec(select(Organization).where(Organization.status == ENTITY_STATUS.ACTIVE.value)).all()
-        return orgs
+        return session.exec(
+            select(Organization).where(
+                Organization.status == ENTITY_STATUS.ACTIVE.value
+            )
+        ).all()
 
 
 # ----------------------
@@ -190,9 +193,7 @@ def read_organization(
     organization_id: str
 ):
 
-    organization = get_org_by_uuid_or_namespace(organization_id, session=session)
-
-    return organization
+    return get_org_by_uuid_or_namespace(organization_id, session=session)
 
 
 # ------------------------------
@@ -300,9 +301,7 @@ async def upload_document(
     if url:
         file_name = url.split('/')[-1]
         file_upload_path = os.path.join(file_root_path, file_name)
-        file_exists = os.path.isfile(file_upload_path)
-
-        if file_exists:
+        if file_exists := os.path.isfile(file_upload_path):
             file_name = f'{file_name}_{int(time.time())}'
             file_upload_path = os.path.join(file_root_path, file_name)
 
@@ -321,15 +320,10 @@ async def upload_document(
         file_contents = open(file_upload_path, 'rb').read()
         file_hash = get_sha256(contents=file_contents)
 
-    # -----------------------
-    # Upload file from device
-    # -----------------------
     else:
         file_name = file.filename
         file_upload_path = os.path.join(file_root_path, file_name)
-        file_exists = os.path.isfile(file_upload_path)
-
-        if file_exists:
+        if file_exists := os.path.isfile(file_upload_path):
             file_name = f'{file_name}_{int(time.time())}'
             file_upload_path = os.path.join(file_root_path, file_name)
 
@@ -337,7 +331,7 @@ async def upload_document(
         file_hash = get_sha256(contents=file_contents)
         await save_file(file, file_upload_path)
 
-    document_obj = create_document_by_file_path(
+    return create_document_by_file_path(
         organization=organization,
         project=project,
         file_path=file_upload_path,
@@ -345,9 +339,8 @@ async def upload_document(
         file_version=file_version,
         url=url,
         overwrite=overwrite,
-        session=session
+        session=session,
     )
-    return document_obj
 
 
 # --------------------------------
@@ -426,17 +419,10 @@ def read_user(
 @app.put("/user/{user_uuid}", response_model=UserRead)
 def update_user(*, user_uuid: str, user: UserUpdate):
 
-    # Get user by UUID
-    user = User.get(uuid=user_uuid)
-
-    # If user exists, update it
-    if user:
-        user.update(**user.dict())
-        return user
-
-    # If user doesn't exist, return 404
-    else:
+    if not (user := User.get(uuid=user_uuid)):
         raise HTTPException(status_code=404, detail=f'User {user_uuid} not found!')
+    user.update(**user.dict())
+    return user
 
 
 # =============
@@ -494,31 +480,27 @@ def get_webhook(
 ):
     webhook_data = webhook.dict()
 
-    # --------------------
-    # Get webhook metadata
-    # --------------------
-    if channel == 'telegram':
-        rasa_webhook_url = f'{RASA_WEBHOOK_URL}/webhooks/{channel}/webhook'
-        data = process_webhook_telegram(webhook_data)
-        channel = CHANNEL_TYPE.TELEGRAM.value
-        user_data = {
-            'identifier': data['user_id'],
-            'identifier_type': channel,
-            'first_name': data['user_firstname'],
-            'language': data['user_language']
-        }
-        session_metadata = {
-            'update_id': data['update_id'],
-            'username': data['username'],
-            'message_id': data['user_message'],
-            'msg_ts': data['message_ts'],
-            'msg_type': data['message_type'],
-        }
-        user_message = data['user_message']
-    else:
+    if channel != 'telegram':
         # Not a valid channel, return 404
         raise HTTPException(status_code=404, detail=f'Channel {channel} not a valid webhook channel!')
 
+    rasa_webhook_url = f'{RASA_WEBHOOK_URL}/webhooks/{channel}/webhook'
+    data = process_webhook_telegram(webhook_data)
+    channel = CHANNEL_TYPE.TELEGRAM.value
+    user_data = {
+        'identifier': data['user_id'],
+        'identifier_type': channel,
+        'first_name': data['user_firstname'],
+        'language': data['user_language']
+    }
+    session_metadata = {
+        'update_id': data['update_id'],
+        'username': data['username'],
+        'message_id': data['user_message'],
+        'msg_ts': data['message_ts'],
+        'msg_type': data['message_type'],
+    }
+    user_message = data['user_message']
     chat_session = chat_query(
         user_message,
         session=session,

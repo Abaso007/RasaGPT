@@ -47,9 +47,9 @@ class BaseModel(SQLModel):
         return snake_case(cls.__name__)
 
     @classmethod
-    def by_uuid(self, _uuid: uuid_pkg.UUID):
+    def by_uuid(cls, _uuid: uuid_pkg.UUID):
         with Session(get_engine()) as session:
-            q = select(self).where(self.uuid == _uuid)
+            q = select(cls).where(cls.uuid == _uuid)
             org = session.exec(q).first()
             return org if org else None
 
@@ -75,12 +75,12 @@ class BaseModel(SQLModel):
             session.refresh(self)
 
     @classmethod
-    def create(self, o: Union[SQLModel, dict] = None):
+    def create(cls, o: Union[SQLModel, dict] = None):
         if not o:
             raise ValueError("Must provide a model or dict to update values")
 
         with Session(get_engine()) as session:
-            obj = self.from_orm(o) if isinstance(o, SQLModel) else self(**o)
+            obj = cls.from_orm(o) if isinstance(o, SQLModel) else cls(**o)
             session.add(obj)
             session.commit()
             session.refresh(obj)
