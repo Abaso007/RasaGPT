@@ -102,13 +102,12 @@ async def get_tunnel(retry=0):
         )
 
     active_tunnels = await get_active_tunnels()
-    if len(active_tunnels) == 0:
-        logger.debug(f"No active tunnels found. Trying again in {RETRY_INTERVAL}s..")
-        await asyncio.sleep(RETRY_INTERVAL)
-        retry += 1
-        return await get_tunnel(retry=retry)
-    else:
+    if len(active_tunnels) != 0:
         return active_tunnels[0]["public_url"]
+    logger.debug(f"No active tunnels found. Trying again in {RETRY_INTERVAL}s..")
+    await asyncio.sleep(RETRY_INTERVAL)
+    retry += 1
+    return await get_tunnel(retry=retry)
 
 
 # -------------------

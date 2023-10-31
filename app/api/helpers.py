@@ -64,7 +64,7 @@ def get_org_by_uuid_or_namespace(
                 ).first()
             )
 
-    if not org and should_except is True:
+    if not org and should_except:
         raise HTTPException(
             status_code=404, detail=f"Organization identifer {id} not found"
         )
@@ -94,7 +94,7 @@ def create_org_by_org_or_uuid(
     if o:
         raise HTTPException(status_code=404, detail="Organization already exists")
 
-    if isinstance(organization, OrganizationCreate) or isinstance(organization, str):
+    if isinstance(organization, (OrganizationCreate, str)):
         organization = organization or OrganizationCreate(
             namespace=namespace, display_name=display_name
         )
@@ -114,10 +114,10 @@ def create_org_by_org_or_uuid(
         db_org = organization
         db_org.update(
             {
-                "namespace": namespace if namespace else organization.namespace,
+                "namespace": namespace if namespace else db_org.namespace,
                 "display_name": display_name
                 if display_name
-                else organization.display_name,
+                else db_org.display_name,
             }
         )
     else:
@@ -169,18 +169,18 @@ def create_user(
         db_user = user
         db_user.update(
             {
-                "identifier": identifier if identifier else user.identifier,
+                "identifier": identifier if identifier else db_user.identifier,
                 "identifier_type": identifier_type
                 if identifier_type
-                else user.identifier_type,
+                else db_user.identifier_type,
                 "device_fingerprint": device_fingerprint
                 if device_fingerprint
-                else user.device_fingerprint,
-                "first_name": first_name if first_name else user.first_name,
-                "last_name": last_name if last_name else user.last_name,
-                "email": email if email else user.email,
-                "phone": phone if phone else user.phone,
-                "dob": dob if dob else user.dob,
+                else db_user.device_fingerprint,
+                "first_name": first_name if first_name else db_user.first_name,
+                "last_name": last_name if last_name else db_user.last_name,
+                "email": email if email else db_user.email,
+                "phone": phone if phone else db_user.phone,
+                "dob": dob if dob else db_user.dob,
             }
         )
     else:
@@ -230,7 +230,7 @@ def get_user_by_uuid_or_identifier(
                 ).first()
             )
 
-    if not user and should_except is True:
+    if not user and should_except:
         raise HTTPException(status_code=404, detail=f"User identifer {id} not found")
 
     return user
@@ -466,7 +466,7 @@ def get_document_by_uuid(
                 )
             ).first()
 
-    if not document and should_except is True:
+    if not document and should_except:
         raise HTTPException(
             status_code=404, detail=f"Document identifier {uuid} not found"
         )
@@ -509,15 +509,14 @@ def get_document_by_name(
                 Document.status == ENTITY_STATUS.ACTIVE.value,
             )
         ).first()
-    else:
-        with Session(get_engine()) as session:
-            return session.exec(
-                select(Document).where(
-                    Document.project == project,
-                    Document.display_name == file_name,
-                    Document.status == ENTITY_STATUS.ACTIVE.value,
-                )
-            ).first()
+    with Session(get_engine()) as session:
+        return session.exec(
+            select(Document).where(
+                Document.project == project,
+                Document.display_name == file_name,
+                Document.status == ENTITY_STATUS.ACTIVE.value,
+            )
+        ).first()
 
 
 # ---------------------
@@ -545,7 +544,7 @@ def get_chat_session_by_uuid(
                 ).first()
             )
 
-    if not chat_session and should_except is True:
+    if not chat_session and should_except:
         raise HTTPException(
             status_code=404, detail=f"ChatSession identifer {id} not found"
         )
@@ -650,7 +649,7 @@ def get_project_by_uuid(
                 )
             ).first()
 
-    if not project and should_except is True:
+    if not project and should_except:
         raise HTTPException(
             status_code=404, detail=f"Project identifier {uuid} not found"
         )
